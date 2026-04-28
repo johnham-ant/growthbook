@@ -3,7 +3,7 @@ import { SDKAttribute } from "shared/types/organization";
 import { recursiveWalk } from "shared/util";
 import { AuthRequest } from "back-end/src/types/AuthRequest";
 import { getContextFromReq } from "back-end/src/services/organizations";
-import { updateOrganization } from "back-end/src/models/OrganizationModel";
+import { updateAttributeSchema } from "back-end/src/services/attributes";
 import { auditDetailsUpdate } from "back-end/src/services/audit";
 import { addTags, addTagsDiff } from "back-end/src/models/TagModel";
 import { getAllFeatures } from "back-end/src/models/FeatureModel";
@@ -53,12 +53,9 @@ export const postAttribute = async (
     tags: tags.length > 0 ? tags : undefined,
   };
 
-  await updateOrganization(org.id, {
-    settings: {
-      ...org.settings,
-      attributeSchema: [...attributeSchema, newAttribute],
-    },
-  });
+  const newAttributeSchema = [...attributeSchema, newAttribute];
+
+  await updateAttributeSchema(context, { newAttributeSchema });
 
   await req.audit({
     event: "attribute.create",
@@ -70,7 +67,7 @@ export const postAttribute = async (
       { settings: { attributeSchema } },
       {
         settings: {
-          attributeSchema: [...attributeSchema, newAttribute],
+          attributeSchema: newAttributeSchema,
         },
       },
     ),
@@ -144,11 +141,14 @@ export const putAttribute = async (
     ...(tags !== undefined && { tags: tags.length > 0 ? tags : undefined }),
   };
 
-  await updateOrganization(org.id, {
-    settings: {
-      ...org.settings,
-      attributeSchema,
-    },
+  const renames: { from: string; to: string }[] =
+    previousName && previousName !== property
+      ? [{ from: previousName, to: property }]
+      : [];
+
+  await updateAttributeSchema(context, {
+    newAttributeSchema: attributeSchema,
+    renames,
   });
 
   await req.audit({
@@ -192,13 +192,10 @@ export const deleteAttribute = async (
     context.permissions.throwPermissionError();
   }
 
-  const updatedArr = attributeSchema.filter((a) => a.property !== id);
+  const newAttributeSchema = attributeSchema.filter((a) => a.property !== id);
 
-  await updateOrganization(org.id, {
-    settings: {
-      ...org.settings,
-      attributeSchema: updatedArr,
-    },
+  await updateAttributeSchema(context, {
+    newAttributeSchema,
   });
 
   await req.audit({
@@ -211,7 +208,7 @@ export const deleteAttribute = async (
       { settings: { attributeSchema: org.settings?.attributeSchema || [] } },
       {
         settings: {
-          attributeSchema: updatedArr,
+          attributeSchema: newAttributeSchema,
         },
       },
     ),

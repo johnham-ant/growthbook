@@ -7,6 +7,7 @@ import {
   DataSourceParams,
   DataSourceSettings,
   DataSourceType,
+  GrowthbookClickhouseDataSource,
 } from "shared/types/datasource";
 import { GoogleAnalyticsParams } from "shared/types/integrations/googleanalytics";
 import { ApiDataSource } from "shared/validators";
@@ -114,7 +115,9 @@ export async function _dangerourslyGetAllDatasourcesByOrganizations(
   return docs.map(toInterface);
 }
 
-export async function getGrowthbookDatasource(context: ReqContext) {
+export async function getGrowthbookDatasource(
+  context: ReqContext,
+): Promise<GrowthbookClickhouseDataSource | null> {
   const orgId = context.org.id;
   const doc: DataSourceDocument | null = await DataSourceModel.findOne({
     type: "growthbook_clickhouse",
@@ -126,7 +129,7 @@ export async function getGrowthbookDatasource(context: ReqContext) {
   const datasource = toInterface(doc);
 
   return context.permissions.canReadMultiProjectResource(datasource.projects)
-    ? datasource
+    ? (datasource as GrowthbookClickhouseDataSource)
     : null;
 }
 
