@@ -18,6 +18,7 @@ import Modal from "@/components/Modal";
 import DataList, { DataListItem } from "@/ui/DataList";
 import Button from "@/ui/Button";
 import Frame from "@/ui/Frame";
+import Text from "@/ui/Text";
 import DraftSelectorForChanges, {
   DraftMode,
 } from "@/components/Features/DraftSelectorForChanges";
@@ -170,7 +171,7 @@ const CustomFieldDisplay: FC<{
     ) : cValue ? (
       cValue
     ) : (
-      <em className="text-muted">none</em>
+      <Text color="text-mid">--</Text>
     );
   };
 
